@@ -543,7 +543,8 @@ function normalizePcm(pcm) {
   return { pcm: out, gain };
 }
 
-/* S6 录音转文字生成：拉录音 → WAV → ASR 转文字 → 文字作 caption 生成纯音乐 */
+/* S6 录音转文字生成：拉录音 → WAV → ASR 转文字 → 文字作 caption，带词演唱生成歌曲
+ * （歌词由平台按 caption 自动撰写并演唱，非纯音乐） */
 function pickAsrSource() {
   const cloud = document.getElementById('asrSrcCloud');
   return cloud && cloud.checked ? 'cloud' : 'local';
@@ -571,7 +572,7 @@ async function runPrompt() {
     }
     log('[asr]', text || '(空)');
     if (!text.trim()) throw new Error('录音里没有识别到文字，请靠近麦克风清晰说一句再试');
-    await startGeneration({ mode: 'instrumental', prompt: text, source: 'S6' });
+    await startGeneration({ mode: 'song', prompt: text, source: 'S6' });
   } catch (e) {
     log('[prompt error]', String(e.message || e));
     await send({ cmd: 'song_abort' });
@@ -616,7 +617,7 @@ async function handleEvent(ev) {
       runHum();
       break;
     case 'prompt_req':
-      // S6：拉板上录音 → ASR 转文字 → 纯音乐
+      // S6：拉板上录音 → ASR 转文字作 caption → 带词演唱（歌词自动写）
       log('[prompt_req]');
       runPrompt();
       break;

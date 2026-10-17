@@ -122,8 +122,9 @@ API Key 在页面顶部填入并保存（存 `localStorage`，key = `musicbox.st
 
 ## 录音转文字（S6）：本地 SenseVoice / 阶跃云端
 
-板上按 **S6** → 拉取录音 → ASR 转文字 → 文字作为 `caption` 直接提交生成纯音乐
-（`mode: instrumental`，识别结果不再二次确认，自动进入生成）。
+板上按 **S6** → 拉取录音 → ASR 转文字 → 文字作为 `caption`（风格/提示词）提交，
+生成**带歌词演唱**的歌曲（`mode: song`，即 `text_to_music` 不带 `instrumental`，
+歌词由平台按 caption 自动撰写并演唱；识别结果不再二次确认，自动进入生成）。
 
 顶栏「S6 识别」单选决定用哪个引擎（每次生效，默认**本地 SenseVoice**）：
 
