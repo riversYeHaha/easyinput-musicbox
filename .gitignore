@@ -1,0 +1,26 @@
+# ---- 通用 ----
+.DS_Store
+Thumbs.db
+*.log
+
+# ---- 环境变量 / 密钥（绝不提交）----
+.env
+.env.*
+*.pem
+*.key
+
+# ---- App（Vite / Node）----
+app/node_modules/
+app/dist/
+app/.vite/
+
+# ---- 固件（ESP-IDF）----
+# build/ 与 managed_components/ 均可由 idf.py 重新生成/下载
+firmware/build/
+firmware/managed_components/
+# sdkconfig 由 sdkconfig.defaults 生成，不入库
+firmware/sdkconfig
+firmware/sdkconfig.old
+# Python 缓存
+**/__pycache__/
+*.pyc

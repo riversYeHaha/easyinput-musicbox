@@ -1,0 +1,4 @@
+dependencies:
+  # Helix MP3 解码器（定点）。registry 无 espressif/helix，采用官方仓库收录的
+  # chmorgan/esp-libhelix-mp3（Helix 解码器 ESP-IDF 移植版，API: mp3dec.h）
+  chmorgan/esp-libhelix-mp3: "^1.0.3"

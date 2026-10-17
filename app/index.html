@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EasyInput MusicBox · 配套软件</title>
+  <style>
+    :root {
+      --bg-0: #070713;
+      --bg-1: #0b0b1e;
+      --panel: rgba(20, 20, 44, 0.55);
+      --panel-2: rgba(16, 16, 36, 0.72);
+      --card: rgba(19, 19, 42, 0.66);
+      --stroke: rgba(122, 130, 220, 0.16);
+      --stroke-strong: rgba(122, 130, 220, 0.30);
+      --ink: #e9edff;
+      --ink-dim: #a4aed6;
+      --ink-faint: #6d78a6;
+      --brand: #7c5cff;
+      --brand-2: #22d3ee;
+      --accent-grad: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --err: #fb6f92;
+      --info: #60a5fa;
+      --radius: 16px;
+      --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.75);
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+              "Hiragino Sans GB", "Microsoft YaHei", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 620px at 12% -8%, rgba(124, 92, 255, 0.20), transparent 60%),
+        radial-gradient(900px 520px at 108% 0%, rgba(34, 211, 238, 0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      min-height: 100vh;
+    }
+
+    /* 顶栏 */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 20px clamp(16px, 4vw, 40px);
+      border-bottom: 1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(11, 11, 30, 0.6), transparent);
+      backdrop-filter: blur(6px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; margin-right: auto; }
+    .logo {
+      width: 42px; height: 42px; border-radius: 13px;
+      background: var(--accent-grad);
+      display: grid; place-items: center;
+      font-size: 20px;
+      box-shadow: 0 8px 22px -8px rgba(124, 92, 255, 0.8);
+      flex: none;
+    }
+    .brand-text { display: flex; flex-direction: column; gap: 2px; }
+    h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+    .tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: .4px; }
+
+    /* 连接状态胶囊 */
+    .conn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px; border-radius: 999px;
+      background: var(--panel-2); border: 1px solid var(--stroke);
+      font-size: 12px; color: var(--ink-dim);
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ink-faint);
+      box-shadow: 0 0 0 3px rgba(109, 120, 166, 0.18);
+      flex: none;
+    }
+    .dot.live { background: var(--ok); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.22);
+                animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.22); }
+      50%      { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.06); }
+    }
+
+    /* 控制台条（连接 + Key） */
+    .console {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 22px clamp(16px, 4vw, 40px) 0;
+      padding: 14px 16px;
+      background: var(--panel); border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    /* 通用按钮 */
+    button {
+      font-family: var(--sans);
+      font-size: 13px; font-weight: 550;
+      padding: 9px 18px;
+      color: var(--ink);
+      background: var(--panel-2);
+      border: 1px solid var(--stroke-strong);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: transform .12s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    button:hover:not(:disabled) {
+      background: rgba(40, 40, 78, 0.85);
+      border-color: rgba(124, 92, 255, 0.5);
+      transform: translateY(-1px);
+    }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    button:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+
+    /* 主操作按钮 */
+    #connect {
+      background: var(--accent-grad);
+      border: none; color: #06060f; font-weight: 700;
+      box-shadow: 0 10px 24px -10px rgba(124, 92, 255, 0.75);
+      padding: 10px 22px;
+    }
+    #connect:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+
+    #status { font-size: 12px; color: var(--ink-faint); letter-spacing: .3px; }
+
+    /* API Key 输入组 */
+    .keygroup { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+    .keylabel { font-size: 12px; color: var(--ink-dim); }
+    .asrsrc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .asrsrc-opt { font-size: 12px; color: var(--ink-dim); display: inline-flex;
+      align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+    .asrsrc-opt input { accent-color: #7c5cff; cursor: pointer; }
+    #apikey {
+      font-family: var(--mono); font-size: 13px;
+      width: 300px; max-width: 60vw;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: rgba(9, 9, 22, 0.7);
+      border: 1px solid var(--stroke-strong);
+      border-radius: 11px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    #apikey::placeholder { color: var(--ink-faint); }
+    #apikey:focus { outline: none; border-color: rgba(124, 92, 255, 0.6);
+                    box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.16); }
+    #savekey { padding: 9px 16px; }
+
+    /* 布局：左侧 Tab 面板（队列/歌曲库）+ 右侧可折叠日志 */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 430px;
+      gap: 20px; align-items: start;
+      padding: 20px clamp(16px, 4vw, 40px) 40px;
+    }
+
+    .panel {
+      display: flex; flex-direction: column;
+      background: var(--panel); border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow); backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+    .tabbed-panel { min-height: 460px; max-height: calc(100vh - 150px); }
+    .log-panel { position: sticky; top: 88px; max-height: calc(100vh - 108px); }
+
+    /* Tab 头 */
+    .panel-tabs {
+      display: flex; align-items: center; gap: 4px;
+      padding: 8px 8px 0; border-bottom: 1px solid var(--stroke);
+      background: rgba(11, 11, 30, 0.4); flex: none;
+    }
+    .tab-btn {
+      appearance: none; background: transparent; border: none; box-shadow: none;
+      font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink-faint);
+      padding: 10px 14px 12px; cursor: pointer; position: relative;
+      display: inline-flex; align-items: center; gap: 8px;
+      border-radius: 10px 10px 0 0; transition: color .2s ease, background .2s ease;
+      transform: none;
+    }
+    .tab-btn:hover:not(:disabled) { background: rgba(124, 92, 255, 0.08);
+                                    color: var(--ink-dim); border: none; transform: none; }
+    .tab-btn.active { color: var(--ink); }
+    .tab-btn.active::after {
+      content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
+      border-radius: 2px; background: var(--accent-grad);
+    }
+    .tab-count {
+      font-family: var(--mono); font-size: 11px; line-height: 1; min-width: 18px; text-align: center;
+      padding: 3px 7px; border-radius: 999px;
+      background: rgba(109, 120, 166, 0.18); color: var(--ink-dim);
+    }
+    .tab-btn.active .tab-count { background: rgba(124, 92, 255, 0.22); color: #d9d2ff; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .panel-body { padding: 14px; overflow-y: auto; flex: 1; min-height: 0; }
+
+    /* 日志面板头 + 折叠 */
+    .log-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 14px; border-bottom: 1px solid var(--stroke);
+      background: rgba(11, 11, 30, 0.4); flex: none;
+    }
+    .log-title { display: inline-flex; align-items: center; gap: 8px;
+                 font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: .3px; }
+    .log-collapse {
+      appearance: none; background: transparent; border: 1px solid var(--stroke);
+      box-shadow: none; color: var(--ink-dim); font-size: 12px;
+      padding: 5px 10px; border-radius: 9px; cursor: pointer; transform: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .log-collapse:hover:not(:disabled) { background: rgba(124, 92, 255, 0.1);
+                                         border-color: rgba(124, 92, 255, 0.4);
+                                         color: var(--ink); transform: none; }
+    .log-actions { display: inline-flex; align-items: center; gap: 6px; }
+    .log-clear {
+      appearance: none; background: transparent; border: 1px solid var(--stroke);
+      box-shadow: none; color: var(--ink-dim); font-size: 12px;
+      padding: 5px 12px; border-radius: 9px; cursor: pointer; transform: none;
+    }
+    .log-clear:hover:not(:disabled) { background: rgba(251, 111, 146, 0.1);
+                                      border-color: rgba(251, 111, 146, 0.4);
+                                      color: #ffb3c4; transform: none; }
+    .log-collapse .chev { display: inline-block; }
+    .log-body { padding: 14px; overflow-y: auto; flex: 1; min-height: 0; }
+
+    /* 折叠：右侧日志收成小胶囊，左侧面板扩展占满 */
+    .layout:has(.log-panel.collapsed) { grid-template-columns: minmax(0, 1fr); }
+    .panel.collapsed .log-body { display: none; }
+    .panel.collapsed .log-head { border-bottom: none; }
+    .log-panel.collapsed {
+      position: fixed; top: 158px; right: clamp(16px, 4vw, 40px);
+      z-index: 30; max-height: none;
+      flex-direction: row; align-items: center;
+      background: var(--panel-2); box-shadow: var(--shadow);
+    }
+    .log-panel.collapsed .log-head {
+      border-bottom: none; background: transparent; padding: 8px 10px;
+    }
+
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-2);
+                box-shadow: 0 0 8px rgba(34, 211, 238, 0.7); }
+    #log {
+      font-family: var(--mono); font-size: 12px; line-height: 1.7;
+      background: linear-gradient(180deg, rgba(9, 9, 22, 0.85), rgba(9, 9, 22, 0.7));
+      border: 1px solid var(--stroke); border-radius: 12px;
+      padding: 14px; height: 100%; min-height: 320px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word; color: #cdd6ff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    /* 任务列表容器 */
+    #tasks {
+      overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+      padding-right: 6px;
+    }
+
+    /* 歌曲库列表 */
+    .lib-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .lib-count { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); letter-spacing: .3px; }
+    .lib-refresh {
+      appearance: none; background: transparent; border: 1px solid var(--stroke);
+      box-shadow: none; color: var(--ink-dim); font-size: 12px; font-weight: 550;
+      padding: 5px 14px; border-radius: 9px; cursor: pointer; transform: none;
+    }
+    .lib-refresh:hover:not(:disabled) { background: rgba(124, 92, 255, 0.1);
+                                        border-color: rgba(124, 92, 255, 0.4);
+                                        color: var(--ink); transform: none; }
+
+    #libList { display: flex; flex-direction: column; gap: 10px; }
+    .lib-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card); border: 1px solid var(--stroke);
+      border-radius: 12px; padding: 11px 13px;
+      transition: border-color .2s ease, transform .12s ease;
+    }
+    .lib-item:hover { transform: translateY(-1px); border-color: var(--stroke-strong); }
+    .lib-item.playing { border-color: rgba(52, 211, 153, 0.5);
+                        background: rgba(52, 211, 153, 0.06); }
+    .lib-slot {
+      font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+      width: 26px; height: 26px; flex: none; border-radius: 8px;
+      background: rgba(109, 120, 166, 0.14); display: grid; place-items: center;
+    }
+    .lib-item.playing .lib-slot { background: rgba(52, 211, 153, 0.18); color: #9ff0bd; }
+    .lib-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .lib-name { font-size: 13px; font-weight: 550; color: var(--ink);
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lib-size { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+    .lib-now {
+      font-size: 10.5px; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
+      padding: 3px 9px; border-radius: 999px;
+      background: rgba(52, 211, 153, 0.16); color: #9ff0bd;
+    }
+    .lib-empty {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      text-align: center; padding: 40px 18px; color: var(--ink-faint);
+      border: 1px dashed var(--stroke-strong); border-radius: 14px;
+      background: rgba(9, 9, 22, 0.35);
+    }
+    .lib-empty .lib-ico { font-size: 32px; opacity: .55; }
+    .lib-empty .lib-t { font-size: 13.5px; font-weight: 600; color: var(--ink-dim); }
+    .lib-empty .lib-d { font-size: 12px; line-height: 1.7; max-width: 320px; }
+
+    /* 任务卡片 */
+    .tcard {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 13px 14px;
+      overflow: hidden;
+      transition: border-color .2s ease, transform .12s ease, box-shadow .2s ease;
+    }
+    .tcard::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--stroke-strong);
+    }
+    .tcard:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -18px rgba(0,0,0,.8); }
+
+    .tcard.st-SUBMITTING::before { background: var(--ink-faint); }
+    .tcard.st-PENDING::before    { background: var(--info); }
+    .tcard.st-RUNNING::before    { background: var(--info); }
+    .tcard.st-TIMEOUT::before    { background: var(--warn); }
+    .tcard.st-SUCCESS::before    { background: var(--ok); }
+    .tcard.st-FAILED::before     { background: var(--err); }
+
+    .thead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .tmode { font-size: 12px; color: var(--ink-dim); font-weight: 550; }
+    .tbadge {
+      font-size: 10.5px; font-weight: 600; letter-spacing: .3px;
+      padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+      background: rgba(109, 120, 166, 0.18); color: #cfd8ff;
+      border: 1px solid transparent;
+    }
+    .st-PENDING .tbadge, .st-RUNNING .tbadge { background: rgba(96, 165, 250, 0.16); color: #a9d2ff; }
+    .st-TIMEOUT .tbadge { background: rgba(251, 191, 36, 0.16); color: #ffd98a; }
+    .st-SUCCESS .tbadge { background: rgba(52, 211, 153, 0.16); color: #9ff0bd; }
+    .st-FAILED  .tbadge { background: rgba(251, 111, 146, 0.16); color: #ffb3c4; }
+
+    .tmsg {
+      margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .st-FAILED .tmsg { color: #ffb3c4; }
+    .st-SUCCESS .tmsg { color: #b9f2d2; }
+    .tmeta { margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+    .tactions { margin-top: 11px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tactions button { padding: 6px 15px; font-size: 12px; border-radius: 9px; }
+    .tdim { font-size: 12px; color: var(--ink-faint); }
+    .tlink {
+      font-size: 12px; font-weight: 600; color: var(--brand-2); text-decoration: none;
+      padding: 6px 14px; border-radius: 9px;
+      background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.28);
+      transition: background .2s ease, transform .12s ease;
+    }
+    .tlink:hover { background: rgba(34, 211, 238, 0.2); text-decoration: none; transform: translateY(-1px); }
+
+    .tempty {
+      font-size: 12.5px; color: var(--ink-faint); text-align: center; line-height: 1.9;
+      border: 1px dashed var(--stroke-strong); border-radius: 14px;
+      padding: 34px 12px; background: rgba(9, 9, 22, 0.35);
+    }
+
+    /* ===== 生成控制台 ===== */
+    .console-form { display: flex; flex-direction: column; gap: 16px; }
+    .cf-sec { display: flex; flex-direction: column; gap: 10px; }
+    .cf-sec-t { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+                color: var(--ink-faint); border-bottom: 1px solid var(--stroke); padding-bottom: 6px; }
+    .cf-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 14px; }
+    .cf-field { display: flex; flex-direction: column; gap: 5px; }
+    .cf-field.full { grid-column: 1 / -1; }
+    .cf-label { font-size: 11.5px; color: var(--ink-dim); font-weight: 600; letter-spacing: .2px;
+                display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .cf-hint { font-size: 10.5px; color: var(--ink-faint); font-weight: 400; font-family: var(--mono); }
+    .cf-input, .cf-select, .cf-textarea {
+      font-family: var(--sans); font-size: 13px; color: var(--ink);
+      background: rgba(9, 9, 22, 0.7); border: 1px solid var(--stroke-strong);
+      border-radius: 10px; padding: 8px 11px; width: 100%;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .cf-textarea { font-family: var(--mono); resize: vertical; min-height: 62px; line-height: 1.55; }
+    .cf-input:focus, .cf-select:focus, .cf-textarea:focus {
+      outline: none; border-color: rgba(124, 92, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.16);
+    }
+    .cf-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); cursor: pointer; }
+    .cf-check input { width: 16px; height: 16px; accent-color: var(--brand); }
+    input[type="file"].cf-input { padding: 6px 8px; font-size: 12px; font-family: var(--mono); }
+    input[type="file"].cf-input::file-selector-button {
+      font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink);
+      background: var(--panel-2); border: 1px solid var(--stroke-strong);
+      border-radius: 8px; padding: 5px 12px; margin-right: 10px; cursor: pointer;
+    }
+    .cf-fileinfo { font-family: var(--mono); font-size: 11px; color: var(--ok); }
+    .cf-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 4px; }
+    .cf-actions button.primary { background: var(--accent-grad); border: none; color: #06060f; font-weight: 700; }
+    .cf-actions button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+    .cf-taskid { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-left: auto; }
+    .cf-result { display: flex; flex-direction: column; gap: 10px;
+                 border: 1px solid var(--stroke); border-radius: 12px; padding: 12px;
+                 background: rgba(9, 9, 22, 0.35); }
+    .cf-result .muted { color: var(--ink-faint); font-size: 12.5px; }
+    .cf-status { font-size: 13px; color: var(--ink); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .cf-status .tbadge { margin: 0; }
+    .cf-result audio { width: 100%; }
+    .cf-audio-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .cf-raw { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); max-height: 130px;
+              overflow: auto; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--stroke);
+              border-radius: 8px; padding: 8px; white-space: pre-wrap; word-break: break-all; }
+
+    /* 滚动条 */
+    #log::-webkit-scrollbar, #tasks::-webkit-scrollbar, .panel-body::-webkit-scrollbar { width: 8px; }
+    #log::-webkit-scrollbar-thumb, #tasks::-webkit-scrollbar-thumb, .panel-body::-webkit-scrollbar-thumb {
+      background: rgba(124, 92, 255, 0.28); border-radius: 999px;
+    }
+    #log::-webkit-scrollbar-thumb:hover, #tasks::-webkit-scrollbar-thumb:hover, .panel-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(124, 92, 255, 0.45);
+    }
+    #log::-webkit-scrollbar-track, #tasks::-webkit-scrollbar-track, .panel-body::-webkit-scrollbar-track { background: transparent; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .log-panel { position: static; max-height: none; }
+      .tabbed-panel { max-height: none; }
+      #tasks { max-height: 360px; }
+      .keygroup { margin-left: 0; width: 100%; }
+      #apikey { flex: 1; width: auto; }
+      .console { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🎵</div>
+      <div class="brand-text">
+        <h1>EasyInput MusicBox</h1>
+        <span class="tagline">USB 串口 · AI 音乐生成工作台</span>
+      </div>
+    </div>
+    <div class="conn">
+      <span class="dot" id="statusdot"></span>
+      <span id="status">disconnected</span>
+    </div>
+  </header>
+
+  <div class="console">
+    <button id="connect">Connect USB</button>
+    <div class="keygroup">
+      <label class="keylabel" for="apikey">阶跃 API Key</label>
+      <input id="apikey" type="password" placeholder="sk-..." />
+      <button id="savekey">保存 Key</button>
+    </div>
+    <div class="asrsrc" title="S6 录音转文字用哪个识别引擎">
+      <label class="keylabel">S6 识别</label>
+      <label class="asrsrc-opt"><input type="radio" name="asrsrc" id="asrSrcLocal" value="local" checked /> 本地 SenseVoice</label>
+      <label class="asrsrc-opt"><input type="radio" name="asrsrc" id="asrSrcCloud" value="cloud" /> 阶跃云端</label>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- 左侧：生成队列 / 歌曲库 Tab 面板 -->
+    <section class="panel tabbed-panel">
+      <div class="panel-tabs" role="tablist">
+        <button class="tab-btn active" role="tab" data-tab="queue" aria-selected="true">
+          生成队列 <span class="tab-count" id="queueCount">0</span>
+        </button>
+        <button class="tab-btn" role="tab" data-tab="library" aria-selected="false">
+          歌曲库
+        </button>
+        <button class="tab-btn" role="tab" data-tab="console" aria-selected="false">
+          生成控制台
+        </button>
+      </div>
+
+      <div class="tab-pane active" data-pane="queue" role="tabpanel">
+        <div class="panel-body">
+          <div id="tasks"></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="library" role="tabpanel">
+        <div class="panel-body">
+          <div class="lib-bar">
+            <span class="lib-count" id="libCount">未同步</span>
+            <button class="lib-refresh" id="libRefresh" title="向开发板重新拉取歌曲列表">刷新</button>
+          </div>
+          <div id="libList"></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="console" role="tabpanel">
+        <div class="panel-body">
+          <div class="console-form">
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">任务与模型</div>
+              <div class="cf-grid">
+                <div class="cf-field">
+                  <label class="cf-label" for="conTask">task<span class="cf-hint">必填</span></label>
+                  <select class="cf-select" id="conTask">
+                    <option value="text_to_music">text_to_music（文生曲/词）</option>
+                    <option value="vocal_to_music">vocal_to_music（哼唱/干声配乐）</option>
+                    <option value="music_cover">music_cover（翻唱）</option>
+                  </select>
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conModel">model_id<span class="cf-hint">必填</span></label>
+                  <input class="cf-input" id="conModel" type="text" value="stepaudio-3-music-preview" />
+                </div>
+                <div class="cf-field full">
+                  <label class="cf-check"><input type="checkbox" id="conInstrumental" />
+                    instrumental（纯器乐，仅 text_to_music，且此时不可传 lyrics）</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">文本</div>
+              <div class="cf-field full">
+                <label class="cf-label" for="conCaption">caption<span class="cf-hint">必填·风格描述</span></label>
+                <textarea class="cf-textarea" id="conCaption"
+                  placeholder="曲风、人声、情绪、调式…例：轻快 city pop，女声气声，温暖怀旧，C 大调"></textarea>
+              </div>
+              <div class="cf-field full">
+                <label class="cf-label" for="conLyrics">lyrics<span class="cf-hint">cover/vocal_to_music 必填</span></label>
+                <textarea class="cf-textarea" id="conLyrics"
+                  placeholder="[Verse 1]&#10;啦啦 啦啦啦&#10;[Chorus 1]&#10;啦啦 啦啦啦"></textarea>
+              </div>
+            </div>
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">参考音频（本地文件，运行时选，不打包进应用）</div>
+              <div class="cf-field full">
+                <label class="cf-label" for="conVocalFile">vocal_audio（干声）<span class="cf-hint">vocal_to_music 必填</span></label>
+                <input class="cf-input" type="file" id="conVocalFile" accept="audio/*,.wav,.mp3,.ogg,.m4a,.pcm" />
+                <span class="cf-fileinfo" id="conVocalInfo"></span>
+              </div>
+              <div class="cf-field full">
+                <label class="cf-label" for="conSongFile">song_audio（参考歌曲）<span class="cf-hint">music_cover 必填</span></label>
+                <input class="cf-input" type="file" id="conSongFile" accept="audio/*,.wav,.mp3,.ogg,.m4a" />
+                <span class="cf-fileinfo" id="conSongInfo"></span>
+              </div>
+            </div>
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">采样与输出（留空=不传该参数，用平台默认）</div>
+              <div class="cf-grid">
+                <div class="cf-field">
+                  <label class="cf-label" for="conFormat">response_format</label>
+                  <select class="cf-select" id="conFormat">
+                    <option value="mp3">mp3（推荐·体积小）</option>
+                    <option value="wav">wav</option>
+                    <option value="flac">flac</option>
+                    <option value="opus">opus</option>
+                    <option value="pcm">pcm（裸流，需自行解析）</option>
+                  </select>
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conSampleRate">sample_rate<span class="cf-hint">默认 48000</span></label>
+                  <input class="cf-input" id="conSampleRate" type="number" placeholder="48000" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conBitRate">bit_rate<span class="cf-hint">mp3/opus</span></label>
+                  <input class="cf-input" id="conBitRate" type="text" placeholder="如 256000" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conTemperature">temperature<span class="cf-hint">0~2</span></label>
+                  <input class="cf-input" id="conTemperature" type="number" step="0.1" placeholder="如 1.0" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conTopK">top_k</label>
+                  <input class="cf-input" id="conTopK" type="number" placeholder="" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conTopP">top_p<span class="cf-hint">0~1</span></label>
+                  <input class="cf-input" id="conTopP" type="number" step="0.05" placeholder="如 0.95" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conRepPenalty">repetition_penalty</label>
+                  <input class="cf-input" id="conRepPenalty" type="number" step="0.1" placeholder="如 1.1" />
+                </div>
+                <div class="cf-field">
+                  <label class="cf-label" for="conMaxTokens">max_tokens</label>
+                  <input class="cf-input" id="conMaxTokens" type="number" placeholder="" />
+                </div>
+              </div>
+            </div>
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">操作</div>
+              <div class="cf-actions">
+                <button class="primary" id="conSubmit">提交生成</button>
+                <button id="conQuery" disabled>查询状态</button>
+                <span class="cf-taskid" id="conTaskId">未提交</span>
+              </div>
+            </div>
+
+            <div class="cf-sec">
+              <div class="cf-sec-t">结果</div>
+              <div class="cf-result" id="conResult">
+                <span class="muted">填好参数点"提交生成"，再用"查询状态"拉取结果；生成完成后可在此播放 / 下载 / 写入开发板。</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧：可折叠日志面板 -->
+    <aside class="panel log-panel" id="logPanel">
+      <div class="log-head">
+        <span class="log-title"><span class="live-dot"></span>实时日志 · 串口通信</span>
+        <div class="log-actions">
+          <button class="log-clear" id="logClear" title="清空当前日志内容">清空</button>
+          <button class="log-collapse" id="logToggle" aria-expanded="true" title="折叠 / 展开">
+            <span class="chev">▸</span><span class="lbl">折叠</span>
+          </button>
+        </div>
+      </div>
+      <div class="log-body">
+        <div id="log"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script>
+    /* 纯视觉层：监听 #status 文本变化，同步连接指示灯（不触碰任何业务逻辑） */
+    (function () {
+      var s = document.getElementById('status');
+      var d = document.getElementById('statusdot');
+      if (!s || !d) return;
+      function sync() { d.classList.toggle('live', s.textContent.trim() === 'connected'); }
+      new MutationObserver(sync).observe(s, { childList: true, characterData: true, subtree: true });
+      sync();
+    })();
+
+    /* 纯视觉层：Tab 切换 / 日志折叠 / 队列计数（不改 main.js 逻辑） */
+    (function () {
+      // —— Tab 切换 ——
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+      var panes = Array.prototype.slice.call(document.querySelectorAll('.tab-pane'));
+      function activateTab(name) {
+        var matched = false;
+        tabs.forEach(function (b) {
+          var on = b.getAttribute('data-tab') === name;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+          if (on) matched = true;
+        });
+        if (!matched) return false;
+        panes.forEach(function (p) {
+          p.classList.toggle('active', p.getAttribute('data-pane') === name);
+        });
+        return true;
+      }
+      tabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var name = btn.getAttribute('data-tab');
+          if (activateTab(name) && history.replaceState) {
+            history.replaceState(null, '', '#' + name);
+          }
+        });
+      });
+      // 支持 #queue / #library / #console 深链打开对应 Tab
+      var hash = (location.hash || '').replace('#', '');
+      if (hash) activateTab(hash);
+      window.addEventListener('hashchange', function () {
+        activateTab((location.hash || '').replace('#', ''));
+      });
+
+      // —— 日志折叠 / 展开 ——
+      var panel = document.getElementById('logPanel');
+      var toggle = document.getElementById('logToggle');
+      if (panel && toggle) {
+        toggle.addEventListener('click', function () {
+          var collapsed = panel.classList.toggle('collapsed');
+          var lbl = toggle.querySelector('.lbl');
+          var chev = toggle.querySelector('.chev');
+          if (lbl) lbl.textContent = collapsed ? '展开' : '折叠';
+          if (chev) chev.textContent = collapsed ? '▸' : '◂';
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+      }
+
+      // —— 清空日志 ——
+      var clearBtn = document.getElementById('logClear');
+      var logEl = document.getElementById('log');
+      if (clearBtn && logEl) {
+        clearBtn.addEventListener('click', function () {
+          logEl.textContent = '';
+          logEl.textContent = '日志已清空 · '
+            + new Date().toLocaleTimeString('zh-CN', { hour12: false }) + '\n';
+          logEl.scrollTop = logEl.scrollHeight;
+        });
+      }
+
+      // —— 队列计数徽章：跟随 #tasks 内 .tcard 数量 ——
+      var tasksEl = document.getElementById('tasks');
+      var countEl = document.getElementById('queueCount');
+      if (tasksEl && countEl) {
+        function updateCount() {
+          var n = tasksEl.querySelectorAll('.tcard').length;
+          countEl.textContent = String(n);
+        }
+        new MutationObserver(updateCount).observe(tasksEl, { childList: true });
+        updateCount();
+      }
+    })();
+  </script>
+</body>
+</html>

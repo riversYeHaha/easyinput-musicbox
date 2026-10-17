@@ -1,0 +1,10 @@
+# Name,   Type, SubType, Offset,   Size,     Flags
+# 16MB Flash 规划（musicbox 项目私有合同，见 docs/musicbox-实现方案.md §3.2）
+nvs,      data, nvs,     0x9000,   0x4000,
+phy_init, data, phy,     0xd000,   0x1000,
+# 固件 2MB（含 Helix MP3 解码器余量）
+factory,  app,  factory, 0x10000,  0x200000,
+# rec：最近一段录音，16kHz/16bit/mono PCM，约 30 秒
+rec,      data, 0x40,    0x210000, 0x100000,
+# songs：生成歌曲（MP3 128kbps），到 16MB 末尾
+songs,    data, 0x41,    0x310000, 0xCF0000,
